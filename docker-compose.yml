@@ -1,0 +1,53 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: nuli
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: membership
+    container_name: membership-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - membership
+
+  db:
+    image: mysql:5.7
+    container_name: membership-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+    - 3307:3306
+    # expose:
+    #   - 3307
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - membership
+
+  nginx:
+    image: nginx:alpine
+    container_name: membership-nginx
+    restart: unless-stopped
+    ports:
+      - "5000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d
+    networks:
+      - membership
+
+networks:
+  membership:
+    driver: bridge
